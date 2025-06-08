@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CRM Nessler iStore</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">Nessler iStore</div>
+                <div class="nav-links">
+                    <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                    <a href="clients.html" class="nav-link">Clientes</a>
+                    <a href="products.html" class="nav-link">Produtos</a>
+                    <a href="#" class="nav-link" id="logoutButton">Sair</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mt-4">
+        <div class="page-header">
+            <h1>Dashboard</h1>
+            <div class="header-actions">
+                <span>Bem-vindo, <span id="userName">Usuário</span></span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="dashboardStats">
+            <div class="stat-card">
+                <div class="stat-label">Total de Clientes</div>
+                <div class="stat-value" id="totalClients">--</div>
+                <div class="stat-trend">+<span id="newClientsMonth">--</span> este mês</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Vendas do Mês</div>
+                <div class="stat-value" id="totalSalesMonth">--</div>
+                <div class="stat-trend">Ticket médio: <span id="averageTicket">--</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Produtos em Estoque</div>
+                <div class="stat-value">--</div>
+                <div class="stat-trend">3 produtos com estoque baixo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Atendimentos Pendentes</div>
+                <div class="stat-value">--</div>
+                <div class="stat-trend">Tempo médio: 2h30min</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6">
+                <div class="card">
+                    <h2 class="card-title">Produtos Mais Vendidos</h2>
+                    <div class="table-responsive">
+                        <table class="table" id="topProductsTable">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Vendas</th>
+                                    <th>Receita</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Carregando...</td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <h2 class="card-title">Atividades Recentes</h2>
+                    <div class="activity-list" id="recentActivities">
+                        <div class="activity-item">
+                            <div class="activity-time">Carregando...</div>
+                            <div class="activity-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <h2 class="card-title">Vendas por Categoria</h2>
+            <div class="table-responsive">
+                <table class="table" id="salesByCategoryTable">
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Vendas</th>
+                            <th>Receita</th>
+                            <th>% do Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Carregando...</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="src/scripts.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar dados do dashboard
+            authenticatedFetch('/dashboard/summary')
+                .then(response => response.json())
+                .then(data => {
+                    // Atualizar estatísticas
+                    document.getElementById('totalClients').textContent = data.total_clients;
+                    document.getElementById('newClientsMonth').textContent = data.new_clients_month;
+                    document.getElementById('totalSalesMonth').textContent = formatCurrency(data.total_sales_month);
+                    document.getElementById('averageTicket').textContent = formatCurrency(data.average_ticket);
+                    
+                    // Atualizar tabela de produtos mais vendidos
+                    const topProductsTable = document.getElementById('topProductsTable').getElementsByTagName('tbody')[0];
+                    topProductsTable.innerHTML = '';
+                    
+                    data.top_products.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${product.name}</td>
+                            <td>${product.sales}</td>
+                            <td>${formatCurrency(product.revenue)}</td>
+                        `;
+                        topProductsTable.appendChild(row);
+                    });
+                    
+                    // Atualizar tabela de vendas por categoria
+                    const salesByCategoryTable = document.getElementById('salesByCategoryTable').getElementsByTagName('tbody')[0];
+                    salesByCategoryTable.innerHTML = '';
+                    
+                    const totalRevenue = data.sales_by_category.reduce((sum, category) => sum + category.revenue, 0);
+                    
+                    data.sales_by_category.forEach(category => {
+                        const percentage = (category.revenue / totalRevenue * 100).toFixed(1);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${category.category}</td>
+                            <td>${category.sales}</td>
+                            <td>${formatCurrency(category.revenue)}</td>
+                            <td>${percentage}%</td>
+                        `;
+                        salesByCategoryTable.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados do dashboard:', error);
+                });
+                
+            // Carregar atividades recentes
+            authenticatedFetch('/dashboard/recent-activities')
+                .then(response => response.json())
+                .then(activities => {
+                    const activitiesList = document.getElementById('recentActivities');
+                    activitiesList.innerHTML = '';
+                    
+                    activities.forEach(activity => {
+                        const activityItem = document.createElement('div');
+                        activityItem.className = 'activity-item';
+                        
+                        const date = new Date(activity.date);
+                        const formattedDate = formatDateTime(date);
+                        
+                        activityItem.innerHTML = `
+                            <div class="activity-time">${formattedDate}</div>
+                            <div class="activity-content">${activity.description}</div>
+                        `;
+                        
+                        activitiesList.appendChild(activityItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar atividades recentes:', error);
+                });
+        });
+    </script>
+</body>
+</html>

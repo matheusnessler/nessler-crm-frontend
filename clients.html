@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - CRM Nessler iStore</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">Nessler iStore</div>
+                <div class="nav-links">
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="clients.html" class="nav-link active">Clientes</a>
+                    <a href="products.html" class="nav-link">Produtos</a>
+                    <a href="#" class="nav-link" id="logoutButton">Sair</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mt-4">
+        <div class="page-header">
+            <h1>Clientes</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="addClientButton">Adicionar Cliente</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="clientSearchInput" placeholder="Buscar clientes...">
+            <button class="btn btn-primary" id="clientSearchButton">Buscar</button>
+        </div>
+
+        <div class="card mt-4">
+            <div class="table-responsive">
+                <table class="table" id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Última Compra</th>
+                            <th>Total de Compras</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" class="text-center">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Detalhes do Cliente -->
+    <div id="clientDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="clientDetailsName">Detalhes do Cliente</h2>
+                <span class="close-modal" id="closeClientDetailsModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="client-details">
+                    <div class="client-info">
+                        <h3>Informações Pessoais</h3>
+                        <p><strong>Email:</strong> <span id="clientDetailsEmail"></span></p>
+                        <p><strong>Telefone:</strong> <span id="clientDetailsPhone"></span></p>
+                        <p><strong>Endereço:</strong> <span id="clientDetailsAddress"></span></p>
+                    </div>
+                    <div class="client-stats">
+                        <div class="stat">
+                            <div class="stat-label">Última Compra</div>
+                            <div class="stat-value" id="clientDetailsLastPurchase"></div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Total de Compras</div>
+                            <div class="stat-value" id="clientDetailsTotalPurchases"></div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">Valor Total</div>
+                            <div class="stat-value" id="clientDetailsTotalValue"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab-item active" data-tab="purchases">Compras</div>
+                        <div class="tab-item" data-tab="messages">Mensagens</div>
+                        <div class="tab-item" data-tab="notes">Anotações</div>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="purchasesTab">
+                            <div class="table-responsive">
+                                <table class="table" id="clientPurchasesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Produtos</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="3" class="text-center">Carregando...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="messagesTab">
+                            <div class="messages-container" id="clientMessages">
+                                <div class="message incoming">
+                                    <div class="message-content">Carregando mensagens...</div>
+                                </div>
+                            </div>
+                            <div class="message-input-container">
+                                <input type="text" class="message-input" id="messageInput" placeholder="Digite uma mensagem...">
+                                <button class="btn btn-primary" id="sendMessageButton">Enviar</button>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="notesTab">
+                            <textarea class="notes-textarea" id="clientNotes" placeholder="Adicione anotações sobre o cliente..."></textarea>
+                            <button class="btn btn-primary mt-2" id="saveNotesButton">Salvar Anotações</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/scripts.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar lista de clientes
+            loadClients();
+            
+            // Configurar busca
+            document.getElementById('clientSearchButton').addEventListener('click', function() {
+                const searchTerm = document.getElementById('clientSearchInput').value.trim();
+                if (searchTerm) {
+                    searchClients(searchTerm);
+                } else {
+                    loadClients();
+                }
+            });
+            
+            // Configurar tabs
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remover classe active de todas as tabs
+                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    
+                    // Adicionar classe active na tab clicada
+                    this.classList.add('active');
+                    
+                    // Mostrar conteúdo da tab
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+            
+            // Configurar modal
+            const modal = document.getElementById('clientDetailsModal');
+            const closeModal = document.getElementById('closeClientDetailsModal');
+            
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Configurar botão de salvar anotações
+            document.getElementById('saveNotesButton').addEventListener('click', function() {
+                const notes = document.getElementById('clientNotes').value;
+                const clientId = modal.getAttribute('data-client-id');
+                
+                saveClientNotes(clientId, notes);
+            });
+        });
+        
+        function loadClients() {
+            authenticatedFetch('/clients/')
+                .then(response => response.json())
+                .then(clients => {
+                    const tableBody = document.getElementById('clientsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+                    
+                    if (clients.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="7" class="text-center">Nenhum cliente encontrado</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
+                    clients.forEach(client => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${client.name}</td>
+                            <td>${client.email}</td>
+                            <td>${client.phone}</td>
+                            <td>${formatDate(client.last_purchase)}</td>
+                            <td>${client.total_purchases}</td>
+                            <td>${formatCurrency(client.total_value)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary view-client" data-id="${client.id}">Ver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                        
+                        // Adicionar evento ao botão de visualizar
+                        row.querySelector('.view-client').addEventListener('click', function() {
+                            const clientId = this.getAttribute('data-id');
+                            viewClientDetails(clientId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar clientes:', error);
+                    const tableBody = document.getElementById('clientsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Erro ao carregar clientes</td></tr>';
+                });
+        }
+        
+        function searchClients(term) {
+            authenticatedFetch(`/clients/search?q=${encodeURIComponent(term)}`)
+                .then(response => response.json())
+                .then(clients => {
+                    const tableBody = document.getElementById('clientsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+                    
+                    if (clients.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="7" class="text-center">Nenhum cliente encontrado</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
+                    clients.forEach(client => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${client.name}</td>
+                            <td>${client.email}</td>
+                            <td>${client.phone}</td>
+                            <td>${formatDate(client.last_purchase)}</td>
+                            <td>${client.total_purchases || '-'}</td>
+                            <td>${client.total_value ? formatCurrency(client.total_value) : '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary view-client" data-id="${client.id}">Ver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                        
+                        // Adicionar evento ao botão de visualizar
+                        row.querySelector('.view-client').addEventListener('click', function() {
+                            const clientId = this.getAttribute('data-id');
+                            viewClientDetails(clientId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar clientes:', error);
+                    const tableBody = document.getElementById('clientsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Erro ao buscar clientes</td></tr>';
+                });
+        }
+        
+        function viewClientDetails(clientId) {
+            authenticatedFetch(`/clients/${clientId}`)
+                .then(response => response.json())
+                .then(client => {
+                    // Preencher dados do cliente
+                    document.getElementById('clientDetailsName').textContent = client.name;
+                    document.getElementById('clientDetailsEmail').textContent = client.email;
+                    document.getElementById('clientDetailsPhone').textContent = client.phone;
+                    document.getElementById('clientDetailsAddress').textContent = client.address || 'Não informado';
+                    document.getElementById('clientDetailsLastPurchase').textContent = formatDate(client.last_purchase);
+                    document.getElementById('clientDetailsTotalPurchases').textContent = client.total_purchases;
+                    document.getElementById('clientDetailsTotalValue').textContent = formatCurrency(client.total_value);
+                    
+                    // Preencher tabela de compras
+                    const purchasesTable = document.getElementById('clientPurchasesTable').getElementsByTagName('tbody')[0];
+                    purchasesTable.innerHTML = '';
+                    
+                    if (!client.purchases || client.purchases.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="3" class="text-center">Nenhuma compra encontrada</td>';
+                        purchasesTable.appendChild(row);
+                    } else {
+                        client.purchases.forEach(purchase => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${formatDate(purchase.date)}</td>
+                                <td>${purchase.products.join(', ')}</td>
+                                <td>${formatCurrency(purchase.total)}</td>
+                            `;
+                            purchasesTable.appendChild(row);
+                        });
+                    }
+                    
+                    // Preencher anotações
+                    document.getElementById('clientNotes').value = client.notes || '';
+                    
+                    // Armazenar ID do cliente no modal
+                    const modal = document.getElementById('clientDetailsModal');
+                    modal.setAttribute('data-client-id', clientId);
+                    
+                    // Exibir modal
+                    modal.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar detalhes do cliente:', error);
+                    alert('Erro ao carregar detalhes do cliente');
+                });
+        }
+        
+        function saveClientNotes(clientId, notes) {
+            authenticatedFetch(`/clients/${clientId}/notes`, {
+                method: 'POST',
+                body: JSON.stringify({ notes })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Anotações salvas com sucesso');
+                })
+                .catch(error => {
+                    console.error('Erro ao salvar anotações:', error);
+                    alert('Erro ao salvar anotações');
+                });
+        }
+    </script>
+</body>
+</html>

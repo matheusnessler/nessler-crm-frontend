@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - CRM Nessler iStore</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">Nessler iStore</div>
+                <div class="nav-links">
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="clients.html" class="nav-link">Clientes</a>
+                    <a href="products.html" class="nav-link active">Produtos</a>
+                    <a href="#" class="nav-link" id="logoutButton">Sair</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mt-4">
+        <div class="page-header">
+            <h1>Produtos</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="addProductButton">Adicionar Produto</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="productSearchInput" placeholder="Buscar produtos...">
+            <button class="btn btn-primary" id="productSearchButton">Buscar</button>
+        </div>
+
+        <div class="filters-container">
+            <label>Filtrar por categoria:</label>
+            <div class="filter-options" id="categoryFilters">
+                <button class="btn btn-secondary active" data-category="all">Todos</button>
+                <!-- Categorias serão adicionadas dinamicamente -->
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="table-responsive">
+                <table class="table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Preço</th>
+                            <th>Estoque</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Detalhes do Produto -->
+    <div id="productDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="productDetailsName">Detalhes do Produto</h2>
+                <span class="close-modal" id="closeProductDetailsModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="product-details">
+                    <div class="product-image">
+                        <img src="https://placehold.co/200x200?text=Produto" alt="Imagem do produto" id="productImage">
+                    </div>
+                    <div class="product-info">
+                        <h3 id="productDetailsTitle">Nome do Produto</h3>
+                        <p><strong>Categoria:</strong> <span id="productDetailsCategory"></span></p>
+                        <p><strong>Preço:</strong> <span id="productDetailsPrice"></span></p>
+                        <p><strong>Estoque:</strong> <span id="productDetailsStock"></span></p>
+                        <p><strong>Status:</strong> <span id="productDetailsStatus"></span></p>
+                        <p id="productDetailsDescription">Descrição do produto...</p>
+                        
+                        <div class="product-stats">
+                            <div class="stat">
+                                <div class="stat-label">Custo</div>
+                                <div class="stat-value" id="productDetailsCost"></div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Margem</div>
+                                <div class="stat-value" id="productDetailsMargin"></div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Vendas (mês)</div>
+                                <div class="stat-value" id="productDetailsSales"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab-item active" data-tab="specs">Especificações</div>
+                        <div class="tab-item" data-tab="sales">Histórico de Vendas</div>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="specsTab">
+                            <table class="specs-table" id="productSpecsTable">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2" class="text-center">Carregando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane" id="salesTab">
+                            <div class="table-responsive">
+                                <table class="table" id="productSalesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Mês</th>
+                                            <th>Quantidade</th>
+                                            <th>Receita</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="3" class="text-center">Carregando...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/scripts.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar lista de produtos
+            loadProducts();
+            
+            // Carregar categorias
+            loadCategories();
+            
+            // Configurar busca
+            document.getElementById('productSearchButton').addEventListener('click', function() {
+                const searchTerm = document.getElementById('productSearchInput').value.trim();
+                if (searchTerm) {
+                    searchProducts(searchTerm);
+                } else {
+                    loadProducts();
+                }
+            });
+            
+            // Configurar tabs
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remover classe active de todas as tabs
+                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    
+                    // Adicionar classe active na tab clicada
+                    this.classList.add('active');
+                    
+                    // Mostrar conteúdo da tab
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+            
+            // Configurar modal
+            const modal = document.getElementById('productDetailsModal');
+            const closeModal = document.getElementById('closeProductDetailsModal');
+            
+            closeModal.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+        
+        function loadProducts() {
+            authenticatedFetch('/products/')
+                .then(response => response.json())
+                .then(products => {
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+                    
+                    if (products.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="6" class="text-center">Nenhum produto encontrado</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
+                    products.forEach(product => {
+                        const row = document.createElement('tr');
+                        
+                        // Definir classe de status
+                        let statusClass = '';
+                        if (product.status === 'available') {
+                            statusClass = 'available';
+                        } else if (product.status === 'low_stock') {
+                            statusClass = 'warning';
+                        } else if (product.status === 'out_of_stock') {
+                            statusClass = 'unavailable';
+                        }
+                        
+                        // Traduzir status
+                        let statusText = '';
+                        if (product.status === 'available') {
+                            statusText = 'Disponível';
+                        } else if (product.status === 'low_stock') {
+                            statusText = 'Estoque Baixo';
+                        } else if (product.status === 'out_of_stock') {
+                            statusText = 'Indisponível';
+                        } else {
+                            statusText = product.status;
+                        }
+                        
+                        row.innerHTML = `
+                            <td>${product.name}</td>
+                            <td>${product.category}</td>
+                            <td>${formatCurrency(product.price)}</td>
+                            <td>${product.stock}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary view-product" data-id="${product.id}">Ver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                        
+                        // Adicionar evento ao botão de visualizar
+                        row.querySelector('.view-product').addEventListener('click', function() {
+                            const productId = this.getAttribute('data-id');
+                            viewProductDetails(productId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar produtos:', error);
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Erro ao carregar produtos</td></tr>';
+                });
+        }
+        
+        function loadCategories() {
+            authenticatedFetch('/products/categories')
+                .then(response => response.json())
+                .then(categories => {
+                    const filtersContainer = document.getElementById('categoryFilters');
+                    
+                    // Manter apenas o botão "Todos"
+                    const allButton = filtersContainer.querySelector('[data-category="all"]');
+                    filtersContainer.innerHTML = '';
+                    filtersContainer.appendChild(allButton);
+                    
+                    // Adicionar botões para cada categoria
+                    categories.forEach(category => {
+                        const button = document.createElement('button');
+                        button.className = 'btn btn-secondary';
+                        button.setAttribute('data-category', category);
+                        button.textContent = category;
+                        
+                        button.addEventListener('click', function() {
+                            // Remover classe active de todos os botões
+                            document.querySelectorAll('#categoryFilters .btn').forEach(btn => {
+                                btn.classList.remove('active');
+                            });
+                            
+                            // Adicionar classe active ao botão clicado
+                            this.classList.add('active');
+                            
+                            // Filtrar produtos
+                            const selectedCategory = this.getAttribute('data-category');
+                            if (selectedCategory === 'all') {
+                                loadProducts();
+                            } else {
+                                filterProductsByCategory(selectedCategory);
+                            }
+                        });
+                        
+                        filtersContainer.appendChild(button);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar categorias:', error);
+                });
+        }
+        
+        function searchProducts(term) {
+            authenticatedFetch(`/products/search?q=${encodeURIComponent(term)}`)
+                .then(response => response.json())
+                .then(products => {
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+                    
+                    if (products.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="6" class="text-center">Nenhum produto encontrado</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
+                    products.forEach(product => {
+                        const row = document.createElement('tr');
+                        
+                        // Definir classe de status
+                        let statusClass = '';
+                        if (product.status === 'available') {
+                            statusClass = 'available';
+                        } else if (product.status === 'low_stock') {
+                            statusClass = 'warning';
+                        } else if (product.status === 'out_of_stock') {
+                            statusClass = 'unavailable';
+                        }
+                        
+                        // Traduzir status
+                        let statusText = '';
+                        if (product.status === 'available') {
+                            statusText = 'Disponível';
+                        } else if (product.status === 'low_stock') {
+                            statusText = 'Estoque Baixo';
+                        } else if (product.status === 'out_of_stock') {
+                            statusText = 'Indisponível';
+                        } else {
+                            statusText = product.status;
+                        }
+                        
+                        row.innerHTML = `
+                            <td>${product.name}</td>
+                            <td>${product.category}</td>
+                            <td>${formatCurrency(product.price)}</td>
+                            <td>${product.stock}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary view-product" data-id="${product.id}">Ver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                        
+                        // Adicionar evento ao botão de visualizar
+                        row.querySelector('.view-product').addEventListener('click', function() {
+                            const productId = this.getAttribute('data-id');
+                            viewProductDetails(productId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar produtos:', error);
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Erro ao buscar produtos</td></tr>';
+                });
+        }
+        
+        function filterProductsByCategory(category) {
+            // Em uma implementação real, isso seria uma chamada para a API
+            // Por enquanto, vamos simular filtrando os produtos já carregados
+            authenticatedFetch('/products/')
+                .then(response => response.json())
+                .then(products => {
+                    const filteredProducts = products.filter(product => product.category === category);
+                    
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';
+                    
+                    if (filteredProducts.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="6" class="text-center">Nenhum produto encontrado nesta categoria</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
+                    filteredProducts.forEach(product => {
+                        const row = document.createElement('tr');
+                        
+                        // Definir classe de status
+                        let statusClass = '';
+                        if (product.status === 'available') {
+                            statusClass = 'available';
+                        } else if (product.status === 'low_stock') {
+                            statusClass = 'warning';
+                        } else if (product.status === 'out_of_stock') {
+                            statusClass = 'unavailable';
+                        }
+                        
+                        // Traduzir status
+                        let statusText = '';
+                        if (product.status === 'available') {
+                            statusText = 'Disponível';
+                        } else if (product.status === 'low_stock') {
+                            statusText = 'Estoque Baixo';
+                        } else if (product.status === 'out_of_stock') {
+                            statusText = 'Indisponível';
+                        } else {
+                            statusText = product.status;
+                        }
+                        
+                        row.innerHTML = `
+                            <td>${product.name}</td>
+                            <td>${product.category}</td>
+                            <td>${formatCurrency(product.price)}</td>
+                            <td>${product.stock}</td>
+                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary view-product" data-id="${product.id}">Ver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                        
+                        // Adicionar evento ao botão de visualizar
+                        row.querySelector('.view-product').addEventListener('click', function() {
+                            const productId = this.getAttribute('data-id');
+                            viewProductDetails(productId);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao filtrar produtos:', error);
+                    const tableBody = document.getElementById('productsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Erro ao filtrar produtos</td></tr>';
+                });
+        }
+        
+        function viewProductDetails(productId) {
+            authenticatedFetch(`/products/${productId}`)
+                .then(response => response.json())
+                .then(product => {
+                    // Preencher dados do produto
+                    document.getElementById('productDetailsName').textContent = product.name;
+                    document.getElementById('productDetailsTitle').textContent = product.name;
+                    document.getElementById('productDetailsCategory').textContent = product.category;
+                    document.getElementById('productDetailsPrice').textContent = formatCurrency(product.price);
+                    document.getElementById('productDetailsStock').textContent = product.stock;
+                    
+                    // Traduzir status
+                    let statusText = '';
+                    if (product.status === 'available') {
+                        statusText = 'Disponível';
+                    } else if (product.status === 'low_stock') {
+                        statusText = 'Estoque Baixo';
+                    } else if (product.status === 'out_of_stock') {
+                        statusText = 'Indisponível';
+                    } else {
+                        statusText = product.status;
+                    }
+                    
+                    document.getElementById('productDetailsStatus').textContent = statusText;
+                    document.getElementById('productDetailsDescription').textContent = product.description || 'Sem descrição disponível';
+                    
+                    // Preencher estatísticas
+                    document.getElementById('productDetailsCost').textContent = formatCurrency(product.cost || 0);
+                    
+                    // Calcular margem
+                    const margin = product.price && product.cost ? ((product.price - product.cost) / product.price * 100).toFixed(1) + '%' : 'N/A';
+                    document.getElementById('productDetailsMargin').textContent = margin;
+                    
+                    // Vendas do mês (simulação)
+                    const monthlySales = product.sales_history && product.sales_history.length > 0 ? 
+                        product.sales_history[product.sales_history.length - 1].quantity : 'N/A';
+                    document.getElementById('productDetailsSales').textContent = monthlySales;
+                    
+                    // Preencher especificações
+                    const specsTable = document.getElementById('productSpecsTable').getElementsByTagName('tbody')[0];
+                    specsTable.innerHTML = '';
+                    
+                    if (!product.specs || Object.keys(product.specs).length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="2" class="text-center">Nenhuma especificação disponível</td>';
+                        specsTable.appendChild(row);
+                    } else {
+                        for (const [key, value] of Object.entries(product.specs)) {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${key}</td>
+                                <td>${value}</td>
+                            `;
+                            specsTable.appendChild(row);
+                        }
+                    }
+                    
+                    // Preencher histórico de vendas
+                    const salesTable = document.getElementById('productSalesTable').getElementsByTagName('tbody')[0];
+                    salesTable.innerHTML = '';
+                    
+                    if (!product.sales_history || product.sales_history.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="3" class="text-center">Nenhum histórico de vendas disponível</td>';
+                        salesTable.appendChild(row);
+                    } else {
+                        product.sales_history.forEach(sale => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${sale.month}</td>
+                                <td>${sale.quantity}</td>
+                                <td>${formatCurrency(sale.revenue)}</td>
+                            `;
+                            salesTable.appendChild(row);
+                        });
+                    }
+                    
+                    // Exibir modal
+                    document.getElementById('productDetailsModal').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar detalhes do produto:', error);
+                    alert('Erro ao carregar detalhes do produto');
+                });
+        }
+    </script>
+</body>
+</html>

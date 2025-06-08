@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CRM Nessler iStore</title>
+    <link rel="stylesheet" href="src/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <h1>Nessler iStore</h1>
+        </div>
+        
+        <h2 class="login-title">Acesso ao CRM</h2>
+        
+        <div id="loginError" class="alert alert-danger" style="display: none; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px; margin-bottom: 15px;"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="Seu email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" id="password" class="form-control" placeholder="Sua senha" required>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" id="loginButton" class="btn btn-primary" style="width: 100%;">Entrar</button>
+            </div>
+        </form>
+        
+        <p class="text-center mt-3">
+            <small>© 2025 Nessler iStore. Todos os direitos reservados.</small>
+        </p>
+    </div>
+
+    <script src="src/scripts.js"></script>
+</body>
+</html>
